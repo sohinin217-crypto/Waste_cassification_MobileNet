@@ -1,6 +1,6 @@
 # 🗑️ Waste Classification — Biodegradable vs Non-Biodegradable
 
-A binary image classifier that takes a photo of a piece of waste and predicts whether it is **biodegradable** or **non-biodegradable**, built with **MobileNetV2 (alpha=0.35)** and **TensorFlow/Keras**.
+A binary image classifier that takes a photo of a piece of waste and predicts whether it is **biodegradable** or **non-biodegradable**, built with **MobileNetV2 (alpha=0.5)** and **TensorFlow/Keras**.
 
 This is **Stage 1** of a two-stage project. Stage 2 will convert the trained model to TFLite and deploy it on an **ESP32-S3** microcontroller for real-world waste sorting.
 
@@ -19,7 +19,7 @@ Data Augmentation
 Rescaling [-1, 1] (MobileNetV2 preprocessing)
         |
         v
-MobileNetV2 Backbone (alpha=0.35, ImageNet-pretrained, FROZEN)
+MobileNetV2 Backbone (alpha=0.5, ImageNet-pretrained, FROZEN)
         |
         v
 Global Average Pooling
@@ -34,8 +34,10 @@ Dense(1) + Sigmoid
 Output: probability [0.0 = biodegradable | 1.0 = non-biodegradable]
 ```
 
-**Total Parameters**: ~411,489 (~0.41 Million)  
-**Model Size**: ~1.57 MB  
+**Total Parameters**: ~707,505 (~0.71 Million)  
+**Trainable Parameters**: 1,281 (classification head only)  
+**Non-Trainable Parameters**: 706,224 (frozen MobileNetV2 backbone)  
+**Model Size**: ~2.70 MB  
 
 ---
 
@@ -62,18 +64,25 @@ The 30 original subcategories are remapped into two binary classes:
 
 | Metric | Value |
 |--------|-------|
-| **Validation Accuracy** | **87.33%** |
-| **Validation Loss** | 0.2998 |
-| Biodegradable Precision | 0.82 |
+| **Validation Accuracy** | **89.13%** |
+| **Validation Loss** | 0.2747 |
+| Biodegradable Precision | 0.87 |
 | Biodegradable Recall | 0.80 |
 | Non-Biodegradable Precision | 0.90 |
-| Non-Biodegradable Recall | 0.91 |
+| Non-Biodegradable Recall | 0.94 |
 
 ### Confusion Matrix
 |  | Predicted Bio | Predicted Non-Bio |
 |--|:---:|:---:|
-| **True Bio** | 811 | 206 |
-| **True Non-Bio** | 174 | 1809 |
+| **True Bio** | 810 | 207 |
+| **True Non-Bio** | 119 | 1864 |
+
+### Parameter Comparison
+
+| Alpha | Parameters | Accuracy | Model Size |
+|-------|-----------|----------|-----------|
+| `alpha=0.35` | 0.41M | 87.33% | ~1.57 MB |
+| `alpha=0.5` ✅ | **0.71M** | **89.13%** | ~2.70 MB |
 
 ---
 
@@ -150,5 +159,5 @@ python evaluate_saved.py
 ---
 
 ## 📄 License
-This project is for educational and research purposes.
+This project is for educational and research purposes.  
 Dataset credit: [Alistair King on Kaggle](https://www.kaggle.com/datasets/alistairking/recyclable-and-household-waste-classification)
