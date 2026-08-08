@@ -1,0 +1,32 @@
+# Large dataset folders (too large for GitHub)
+dataset/
+images/
+
+# Trained model file
+*.keras
+*.tflite
+*.h5
+
+# Generated plots
+*.png
+
+# Python virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
