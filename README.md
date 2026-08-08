@@ -1,6 +1,6 @@
 # 🗑️ Waste Classification — Biodegradable vs Non-Biodegradable
 
-A binary image classifier that takes a photo of a piece of waste and predicts whether it is **biodegradable** or **non-biodegradable**, built with **MobileNetV2 (alpha=0.5)** and **TensorFlow/Keras**.
+A binary image classifier that takes a photo of a piece of waste and predicts whether it is **biodegradable** or **non-biodegradable**, built with **MobileNetV2** and **TensorFlow/Keras**.
 
 This is **Stage 1** of a two-stage project. Stage 2 will convert the trained model to TFLite and deploy it on an **ESP32-S3** microcontroller for real-world waste sorting.
 
@@ -19,7 +19,7 @@ Data Augmentation
 Rescaling [-1, 1] (MobileNetV2 preprocessing)
         |
         v
-MobileNetV2 Backbone (alpha=0.5, ImageNet-pretrained, FROZEN)
+MobileNetV2 Backbone (alpha=0.75, ImageNet-pretrained, FROZEN)
         |
         v
 Global Average Pooling
@@ -34,10 +34,10 @@ Dense(1) + Sigmoid
 Output: probability [0.0 = biodegradable | 1.0 = non-biodegradable]
 ```
 
-**Total Parameters**: ~707,505 (~0.71 Million)  
+**Total Parameters**: ~1,383,345 (~1.38 Million)  
 **Trainable Parameters**: 1,281 (classification head only)  
-**Non-Trainable Parameters**: 706,224 (frozen MobileNetV2 backbone)  
-**Model Size**: ~2.70 MB  
+**Non-Trainable Parameters**: 1,382,064 (frozen MobileNetV2 backbone)  
+**Model Size**: ~5.27 MB  
 
 ---
 
@@ -60,29 +60,32 @@ The 30 original subcategories are remapped into two binary classes:
 
 ---
 
-## 🚀 Results (Stage 1)
+## 🚀 Results — Alpha Comparison
+
+| Alpha | Parameters | Model Size | Validation Accuracy |
+|-------|-----------|------------|---------------------|
+| `alpha=0.35` | 0.41M | ~1.57 MB | 87.33% |
+| `alpha=0.5`  | 0.71M | ~2.70 MB | **89.13%** ✅ Best |
+| `alpha=0.75` | 1.38M | ~5.27 MB | 88.90% |
+
+> **Best overall**: `alpha=0.5` gives the highest accuracy (89.13%) with a relatively small model (0.71M parameters), making it the best candidate for ESP32 deployment.
+
+### Latest Run (alpha=0.75)
 
 | Metric | Value |
 |--------|-------|
-| **Validation Accuracy** | **89.13%** |
-| **Validation Loss** | 0.2747 |
+| **Validation Accuracy** | **88.90%** |
+| **Validation Loss** | 0.2725 |
 | Biodegradable Precision | 0.87 |
-| Biodegradable Recall | 0.80 |
+| Biodegradable Recall | 0.79 |
 | Non-Biodegradable Precision | 0.90 |
 | Non-Biodegradable Recall | 0.94 |
 
-### Confusion Matrix
+### Confusion Matrix (alpha=0.75)
 |  | Predicted Bio | Predicted Non-Bio |
 |--|:---:|:---:|
-| **True Bio** | 810 | 207 |
-| **True Non-Bio** | 119 | 1864 |
-
-### Parameter Comparison
-
-| Alpha | Parameters | Accuracy | Model Size |
-|-------|-----------|----------|-----------|
-| `alpha=0.35` | 0.41M | 87.33% | ~1.57 MB |
-| `alpha=0.5` ✅ | **0.71M** | **89.13%** | ~2.70 MB |
+| **True Bio** | 804 | 213 |
+| **True Non-Bio** | 120 | 1863 |
 
 ---
 
@@ -128,6 +131,8 @@ This will:
 - Save confusion matrix to `confusion_matrix.png`
 - Save sample predictions to `sample_predictions.png`
 - Save the trained model to `waste_classifier.keras`
+
+> To change the model width, edit the `alpha` value in `train.py` (line 64). Recommended values: `0.35`, `0.5`, `0.75`, `1.0`.
 
 ### 5. Evaluate the saved model
 ```bash
