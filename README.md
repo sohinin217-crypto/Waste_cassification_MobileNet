@@ -1,6 +1,6 @@
 # 🗑️ Waste Classification — Biodegradable vs Non-Biodegradable
 
-A binary image classifier that takes a photo of a piece of waste and predicts whether it is **biodegradable** or **non-biodegradable**, built with **MobileNetV2** and **TensorFlow/Keras**.
+A binary image classifier that takes a photo of a piece of waste and predicts whether it is **biodegradable** or **non-biodegradable**, built with **MobileNetV2 (alpha=0.5)** and **TensorFlow/Keras**.
 
 This is **Stage 1** of a two-stage project. Stage 2 will convert the trained model to TFLite and deploy it on an **ESP32-S3** microcontroller for real-world waste sorting.
 
@@ -19,7 +19,7 @@ Data Augmentation
 Rescaling [-1, 1] (MobileNetV2 preprocessing)
         |
         v
-MobileNetV2 Backbone (alpha=0.75, ImageNet-pretrained, FROZEN)
+MobileNetV2 Backbone (alpha=0.5, ImageNet-pretrained, FROZEN)
         |
         v
 Global Average Pooling
@@ -34,58 +34,33 @@ Dense(1) + Sigmoid
 Output: probability [0.0 = biodegradable | 1.0 = non-biodegradable]
 ```
 
-**Total Parameters**: ~1,383,345 (~1.38 Million)  
+**Total Parameters**: ~707,505 (~0.71 Million)  
 **Trainable Parameters**: 1,281 (classification head only)  
-**Non-Trainable Parameters**: 1,382,064 (frozen MobileNetV2 backbone)  
-**Model Size**: ~5.27 MB  
+**Non-Trainable Parameters**: 706,224 (frozen MobileNetV2 backbone)  
+**Model Size**: ~2.70 MB  
 
 ---
 
-## 📁 Dataset
+## 📁 Datasets & Evaluation Results
 
-The dataset is based on the **Recyclable and Household Waste Classification** dataset from Kaggle by [Alistair King](https://www.kaggle.com/datasets/alistairking/recyclable-and-household-waste-classification).
+### 1. Main Training Dataset (Kaggle Dataset)
+- **Total Images**: 15,000 (5,000 Biodegradable / 10,000 Non-Biodegradable)
+- **Validation Split**: 3,000 images (20%)
+- **Validation Accuracy**: **89.00%**
+- **Validation Loss**: `0.2802`
 
-The 30 original subcategories are remapped into two binary classes:
+### 2. Real-World `Datasets` Test Set (DataCluster Garbage Dataset)
+- **Total Images**: 250 real-world unsegregated domestic garbage images
+- **Validation Accuracy**: **82.40%** (206 / 250 images correct)
+- **Validation Loss**: `0.5145`
 
-| Class | Categories |
-|-------|-----------|
-| **Biodegradable** | cardboard_boxes, cardboard_packaging, coffee_grounds, eggshells, food_waste, tea_bags, magazines, newspaper, office_paper, paper_cups |
-| **Non-Biodegradable** | aerosol_cans, aluminum_food_cans, aluminum_soda_cans, steel_food_cans, glass_beverage_bottles, glass_cosmetic_containers, glass_food_jars, plastic_* (9 types), styrofoam_*, clothing, shoes |
+### 3. Combined Overall Performance
 
-- **Total Images**: 15,000 (500 per category × 30 categories)
-- **Biodegradable**: 5,000 images
-- **Non-Biodegradable**: 10,000 images
-- **Split**: 80% Training (12,000) / 20% Validation (3,000)
-- **Image Size**: 128×128 RGB
-
----
-
-## 🚀 Results — Alpha Comparison
-
-| Alpha | Parameters | Model Size | Validation Accuracy |
-|-------|-----------|------------|---------------------|
-| `alpha=0.35` | 0.41M | ~1.57 MB | 87.33% |
-| `alpha=0.5`  | 0.71M | ~2.70 MB | **89.13%** ✅ Best |
-| `alpha=0.75` | 1.38M | ~5.27 MB | 88.90% |
-
-> **Best overall**: `alpha=0.5` gives the highest accuracy (89.13%) with a relatively small model (0.71M parameters), making it the best candidate for ESP32 deployment.
-
-### Latest Run (alpha=0.75)
-
-| Metric | Value |
-|--------|-------|
-| **Validation Accuracy** | **88.90%** |
-| **Validation Loss** | 0.2725 |
-| Biodegradable Precision | 0.87 |
-| Biodegradable Recall | 0.79 |
-| Non-Biodegradable Precision | 0.90 |
-| Non-Biodegradable Recall | 0.94 |
-
-### Confusion Matrix (alpha=0.75)
-|  | Predicted Bio | Predicted Non-Bio |
-|--|:---:|:---:|
-| **True Bio** | 804 | 213 |
-| **True Non-Bio** | 120 | 1863 |
+| Dataset | Total Test Images | Accuracy Score |
+|:---|:---:|:---:|
+| **Main Kaggle Validation Set** | 3,000 | **89.00%** |
+| **Real-World `Datasets` Test Set** | 250 | **82.40%** |
+| **COMBINED OVERALL TOTAL** | **3,250** | **88.49%** ✅ |
 
 ---
 
@@ -106,37 +81,23 @@ venv\Scripts\Activate.ps1       # Windows
 pip install tensorflow pillow matplotlib seaborn scikit-learn tqdm
 ```
 
-### 3. Prepare the dataset
-Download the [Kaggle dataset](https://www.kaggle.com/datasets/alistairking/recyclable-and-household-waste-classification) and place it under:
-```
-images/
-  images/
-    aerosol_cans/
-    cardboard_boxes/
-    ...
-```
-Then run the preprocessing script:
+### 3. Predict any single image (Standalone Helper)
 ```bash
-python prepare_dataset.py
+python predict_image.py path/to/waste_photo.jpg
 ```
-This will create the `dataset/` folder with `biodegradable/` and `non_biodegradable/` subfolders.
-
-### 4. Train the model
-```bash
-python train.py
+Output:
 ```
-This will:
-- Train for 15 epochs with Adam optimizer (lr=1e-3)
-- Save training curves to `training_curves.png`
-- Save confusion matrix to `confusion_matrix.png`
-- Save sample predictions to `sample_predictions.png`
-- Save the trained model to `waste_classifier.keras`
+==========================================
+ Image File  : sample.jpg
+ Prediction  : BIODEGRADABLE
+ Confidence  : 98.45%
+==========================================
+```
 
-> To change the model width, edit the `alpha` value in `train.py` (line 64). Recommended values: `0.35`, `0.5`, `0.75`, `1.0`.
-
-### 5. Evaluate the saved model
+### 4. Re-evaluate Validation Accuracy
 ```bash
-python evaluate_saved.py
+python evaluate_saved.py              # Evaluates main dataset (89.00%)
+python label_and_evaluate_datasets.py # Evaluates Datasets folder (82.40%)
 ```
 
 ---
@@ -144,9 +105,13 @@ python evaluate_saved.py
 ## 📂 Project Structure
 
 ```
-├── prepare_dataset.py     # Maps, resizes, and organizes raw images
-├── train.py               # Model building, training, and evaluation
-├── evaluate_saved.py      # Load and evaluate the saved model
+├── prepare_dataset.py            # Maps, resizes, and organizes raw images
+├── train.py                      # Model building, training, and evaluation
+├── evaluate_saved.py             # Evaluates trained model on validation split
+├── evaluate_new_dataset.py       # Inference script for unsegregated dataset
+├── evaluate_custom_dataset.py    # Custom evaluation on Datasets folder
+├── label_and_evaluate_datasets.py# Zero-shot material labeling & accuracy evaluation
+├── predict_image.py              # Standalone single-image prediction helper
 ├── .gitignore
 └── README.md
 ```
@@ -165,4 +130,4 @@ python evaluate_saved.py
 
 ## 📄 License
 This project is for educational and research purposes.  
-Dataset credit: [Alistair King on Kaggle](https://www.kaggle.com/datasets/alistairking/recyclable-and-household-waste-classification)
+Dataset credits: [Alistair King on Kaggle](https://www.kaggle.com/datasets/alistairking/recyclable-and-household-waste-classification) & DataCluster Labs.
