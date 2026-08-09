@@ -21,8 +21,32 @@ val_ds = tf.keras.utils.image_dataset_from_directory(
     label_mode='binary'
 )
 
-print(f"Loading trained model from {model_path}...")
-model = tf.keras.models.load_model(model_path)
+print("Building model architecture (alpha=0.5)...")
+backbone = tf.keras.applications.MobileNetV2(
+    input_shape=(128, 128, 3),
+    alpha=0.5,
+    include_top=False,
+    weights=None
+)
+backbone.trainable = False
+
+inputs = tf.keras.layers.Input(shape=(128, 128, 3))
+x = tf.keras.layers.Rescaling(scale=1.0/127.5, offset=-1.0)(inputs)
+x = backbone(x, training=False)
+x = tf.keras.layers.GlobalAveragePooling2D()(x)
+x = tf.keras.layers.Dropout(0.2)(x)
+outputs = tf.keras.layers.Dense(1, activation='sigmoid')(x)
+
+model = tf.keras.models.Model(inputs, outputs, name="waste_classifier")
+
+print(f"Loading weights from {model_path}...")
+model.load_weights(model_path)
+
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=1e-3),
+    loss='binary_crossentropy',
+    metrics=['accuracy']
+)
 
 print("\nEvaluating model on validation dataset...")
 loss, accuracy = model.evaluate(val_ds)
