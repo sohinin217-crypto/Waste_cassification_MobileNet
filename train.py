@@ -61,7 +61,7 @@ data_augmentation = tf.keras.Sequential([
 # Use alpha=0.35, ImageNet weights, and exclude classification head (top)
 backbone = tf.keras.applications.MobileNetV2(
     input_shape=(IMAGE_SIZE[0], IMAGE_SIZE[1], 3),
-    alpha=0.75,
+    alpha=0.5,
     include_top=False,
     weights='imagenet'
 )
